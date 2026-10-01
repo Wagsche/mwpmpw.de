@@ -1,21 +1,37 @@
-name: Deploy WordPress to GoDaddy via rsync
+name: Deploy WordPress to GoDaddy (debug)
+
 on:
   workflow_dispatch:
-    inputs:
-      deployment_dest:
-        description: 'Target server directory, leave blank for root directory'
-        required: false
-        default: ''
+
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
+    env:
+      REMOTE_HOST: "1288419.eu15.myftpupload.com"
+      SSH_USER:    "git_deployer_304faccb23_1288419"
+
     steps:
-      - name: Checkout Repository Code
-        uses: actions/checkout@v3
-      - name: Synchronize Files with GoDaddy WordPress Hosting Server
-        uses: godaddy-wordpress/gd-wordpress-deployer@v1
-        with:
-          remote_host: "1288419.eu15.myftpupload.com"
-          ssh_user: "git_deployer_304faccb23_1288419"
-          ssh_private_key: ${{secrets.PRIVATE_KEY}}
-          deployment_dest: ${{ github.event.inputs.deployment_dest }}
+      - uses: actions/checkout@v4
+
+      # ---------- Debug – speichere den Secret‑Key in eine temporäre Datei ----------
+      - name: Write private key to temporary file (masked)
+        env:
+          PRIVATE_KEY_CONTENT: ${{ secrets.PRIVATE_KEY }}
+        run: |
+          echo "Creating /tmp/deploy_key …"
+          printf "%s\n" "$PRIVATE_KEY_CONTENT" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          echo "File size (bytes): $(stat -c%s /tmp/deploy_key)"   # → sollte > 0 sein
+
+      # ---------- Debug – teste die SSH‑Verbindung ----------
+      - name: SSH connection test (dry‑run)
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$PRIVATE_KEY" > ~/.ssh/test_key
+          chmod 600 ~/.ssh/test_key
+          echo "Attempting SSH to ${SSH_USER}@${REMOTE_HOST} …"
+          ssh -i ~/.ssh/test_key -o StrictHostKeyChecking=no -p 22 "${SSH_USER}@${REMOTE_HOST}" "echo 'SSH‑OK'" \
+            && echo "✅ SSH succeeded" \
+            || echo "❌ SSH failed (siehe vorherige Zeile)"
