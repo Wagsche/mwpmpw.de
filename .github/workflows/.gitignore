@@ -1,1 +1,15 @@
+# WordPress‑Instanz‑Dateien, die nicht versioniert werden sollen
+/wp-content/uploads/
+/wp-content/upgrade/
+wp-config.php
 
+# Build‑Artefakte / Abhängigkeiten
+/vendor/
+/node_modules/
+.env
+.DS_Store
+
+# IDE / Editor‑Dateien
+.idea/
+.vscode/
+*.sublime-workspace
